@@ -1,0 +1,182 @@
+DATA baseball;
+    SET sashelp.baseball;
+*Variables to be analyzed are variables suspected to be associated with an increase in salary as well as categorical variables 
+suspected to be related to salary: team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
+*Converting the variables TEAM, POSITION, and DIV to numeric;
+team1=team;
+    If team1="Atlanta" THEN team1=1;
+    ELSE If team1="Baltimore" THEN team1=2;
+    ELSE If team1="Boston" THEN team1=3;
+    ELSE If team1="California" THEN team1=4; 
+    ELSE If team1="Chicago" THEN team1=5; 
+    ELSE If team1="Cincinnati" THEN team1=6;
+    ELSE If team1="Cleveland" THEN team1=7; 
+    ELSE If team1="Detroit" THEN team1=8; 
+    ELSE If team1="Houston" THEN team1=9; 
+    ELSE If team1="Kansas City" THEN team1=10; 
+    ELSE If team1="Los Angeles" THEN team1=11; 
+    ELSE If team1="Milwaukee" THEN team1=12; 
+    ELSE If team1="Minneapolis" THEN team1=13; 
+    ELSE If team1="Montreal" THEN team1=14; 
+    ELSE If team1="New York" THEN team1=15; 
+    ELSE If team1="Oakland" THEN team1=16; 
+    ELSE If team1="Pittsburgh" THEN team1=17; 
+    ELSE If team1="Philadelphia" THEN team1=18; 
+    ELSE If team1="San Diego" THEN team1=19; 
+    ELSE If team1="San Francisco" THEN team1=20;
+    ELSE If team1="Seattle" THEN team1=21; 
+    ELSE If team1="St Louis" THEN team1=22;
+    ELSE If team1="Texas" THEN team1=23; 
+    ELSE If team1="Toronto" THEN team1=24;   
+
+position1=position;
+    IF position1="13" THEN position1=1;
+    ELSE IF position1="1B" THEN position1=2;
+    ELSE IF position1="1O" THEN position1=3;
+    ELSE IF position1="23" THEN position1=4;
+    ELSE IF position1="2B" THEN position1=5;
+    ELSE IF position1="2S" THEN position1=6;
+    ELSE IF position1="32" THEN position1=7;
+    ELSE IF position1="3B" THEN position1=8;
+    ELSE IF position1="3O" THEN position1=9;
+    ELSE IF position1="3S" THEN position1=10;
+    ELSE IF position1="C" THEN position1=11;
+    ELSE IF position1="CD" THEN position1=12;
+    ELSE IF position1="CF" THEN position1=13;
+    ELSE IF position1="CS" THEN position1=14;
+    ELSE IF position1="DH" THEN position1=15;
+    ELSE IF position1="DO" THEN position1=16;
+    ELSE IF position1="LF" THEN position1=17;
+    ELSE IF position1="O1" THEN position1=18;
+    ELSE IF position1="OD" THEN position1=19;
+    ELSE IF position1="OF" THEN position1=20;
+    ELSE IF position1="OS" THEN position1=21;
+    ELSE IF position1="RF" THEN position1=22;
+    ELSE IF position1="S3" THEN position1=23;
+    ELSE IF position1="SS" THEN position1=24;
+    ELSE IF position1="UT" THEN position1=25;
+
+div1=div;
+    IF div1="NE" THEN div1=1;
+    ELSE IF div1="NW" THEN div1=2;
+    ELSE IF div1="AE" THEN div1=3;
+    ELSE IF div1="AW" THEN div1=4;
+
+*Examining descriptive statistics;
+PROC FREQ DATA=baseball;    
+PROC UNIVARIATE DATA=baseball;
+
+*Converting character variables to numeric;
+Data baseball1;
+SET baseball;
+    team2=input(team1, 14.);
+    position2=input(position1, 8.);
+    div2=input(div1,16.);
+RUN; 
+*Using PROC CONTENTS and PROC PRINT to confirm that the variables were properly converted; 
+PROC CONTENTS DATA=baseball1;
+RUN; 
+PROC PRINT DATA=baseball1;
+
+
+*A scatterplot of salary for each team suggests that the range of salaries varies by team;
+PROC SGPLOT DATA = baseball;
+    SCATTER x=team y=salary;
+RUN;
+*A scatterplot of salary for each div grouped by team suggests that the range of salaries varies by div;
+PROC SGPLOT DATA = baseball;
+    SCATTER x=div y=salary / group=team;
+RUN;
+
+*Creating scatterplots of salary per team for each div to determine if the difference in 
+salaries per team is due to a difference in team or a difference in div;
+*The range in salary per team appears to be similar within each div;
+DATA baseballAE;
+    SET baseball;
+    IF div="AE";
+RUN;    
+PROC SGPLOT DATA = baseballAE;
+    SCATTER x=team y=salary;
+RUN;
+DATA baseballAW;
+    SET baseball;
+    IF div="AW";
+RUN;    
+PROC SGPLOT DATA = baseballAW;
+    SCATTER x=team y=salary;
+RUN;
+DATA baseballNE;
+    SET baseball;
+    IF div="NE";
+RUN;    
+PROC SGPLOT DATA = baseballNE;
+    SCATTER x=team y=salary;
+RUN;
+DATA baseballNW;
+    SET baseball;
+    IF div="NW";
+RUN;    
+PROC SGPLOT DATA = baseballNW;
+    SCATTER x=team y=salary;
+RUN;
+
+*A scatterplot and boxplot of salary for each position suggests that the range of salaries 
+may or may not vary by position;
+PROC SGPLOT DATA = baseball;
+    SCATTER x=position y=salary;
+RUN;
+PROC SORT DATA=baseball;
+    BY position;
+RUN;
+PROC BOXPLOT DATA=baseball;
+    PLOT salary*position;
+RUN;      
+
+*Running an initial multiple linear regression to determine if salary or logsalary should be
+the dependent variable;
+*The graphs for predicted value vs. residual for both show a clear indication of 
+heteroscedasticity, however, the trend is stronger for salary than logsalary;
+*The QQ plot indicates more normality for logsalary;
+PROC REG  data=baseball1 plots;        
+    MODEL salary= div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits/clb
+    ALPHA=.05;
+RUN;
+PROC REG  data=baseball1 plots;        
+    MODEL logsalary= div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits/clb
+    ALPHA=.05;
+RUN;
+*Running a simple Box-Cox transformation with div2;
+*Results suggest that logsalary should be used;
+PROC TRANSREG data = baseball1;
+    MODEL boxcox(salary / convenient lambda = -1 to 3 by 0.1)= qpoint(div2);
+RUN;
+
+*Creating model;
+*Forward selection;
+*Result: CrRuns nHits YrMajor div2;
+proc reg data=baseball1;
+model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits
+/selection=forward slentry=0.05 details;
+run;
+quit;
+*Stepwise selection;
+*Result: CrRuns nHits YrMajor div2;
+proc reg data=baseball1;
+model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits
+/selection=stepwise slstay=0.05 slentry=0.05 details;
+run;
+quit;
+*Backwards selection;
+*Results: div2 YrMajor nRuns CrHits nHits;
+Proc reg data=baseball1;        
+model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits/
+selection=backward slentry=0.05 details;
+run;  
+
+*Running a final model using only independent variables found significant by all three model selection methods;
+*Residuals suggest the existence of two possible large outliers and six possible minor outliers;
+*Residuals show ten points with high leverage;
+PROC REG  data=baseball1 plots;        
+    MODEL logsalary= YrMajor div2 nHits/clb
+    ALPHA=.05;
+RUN;
