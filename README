@@ -1,5 +1,5 @@
 This code is for a multiple linear regression analysis performed using the BASEBALL dataset included in the SASHELP library. 
 The dataset includes salary and performance information for Major League Baseball Players who played at least one game in both 1986 and 1987. 
-The multiple linear regression analyzes if the variables team2, div2, YrMajor, Position2, nAtBat, CrAtBat, nHome, CrHome, nRuns, CrRuns, CrHits, and nHits are associated with salary.
+The multiple linear regression analyzes if the variables div2, YrMajor, Position2, nAtBat, CrAtBat, nHome, CrHome, nRuns, CrRuns, CrHits, nHits, CrBB, CrRBi, nAssts, nBB, nError, nOuts, and nRBI are associated with salary.
 
 Coding was performed in SAS Studio.
