@@ -151,32 +151,60 @@ PROC TRANSREG data = baseball1;
     MODEL boxcox(salary / convenient lambda = -1 to 3 by 0.1)= qpoint(div2);
 RUN;
 
+*Examining multicollinearity between the different variables;
+*nAtBat has a strong, significant positive association with nHit and nRun and a 
+moderate, significant positive association with nHome.
+CrAtBat has a strong, significant positive association with CrHit, CrHome, and CrRun.
+This is possibly because players with better batting statistics are at bat more often.
+CrAtBat has a strong, positive association with YrMajor.
+nAtBat and YrMajor will be in the model, while CrAtBat, CrHit, CrHome, CrRun, nHit, nRun, and nHome will not.;
+PROC sgscatter data=baseball1;
+ matrix logsalary div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
+run; 
+PROC CORR data=baseball1;
+ VAR logsalary div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
+RUN; 
+*Examining multicollinearity between more variables;
+*CrBB and CrRBi have strong, significant positive associations with YrMajor and will not be in the model.
+nErrors is very much not associated with logsalary and will not be in the model.
+nAtBat has a strong, significant association with nRBI, a moderate, significant association with nBB 
+and a weak, significant association with nAssts and nOut. The strong and moderate associations
+likely have the same causes as previously listed, and the variables will not be in the model.
+The weak associations are both actions done by fielders, and thus the association is likely due to 
+the overall number of games played.;
+PROC sgscatter data=baseball1;
+ matrix logsalary div2 YrMajor Position2 nAtBat CrBB CrRBi nAssts nBB nError nOuts nRBI;
+run; 
+PROC CORR data=baseball1;
+ VAR logsalary div2 YrMajor Position2 nAtBat CrBB CrRBi nAssts nBB nError nOuts nRBI;
+RUN; 
+
 *Creating model;
 *Forward selection;
-*Result: CrRuns nHits YrMajor div2;
+*Result: div2 YrMajor nAtBat nAssts;
 proc reg data=baseball1;
-model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits
+model logsalary=div2 YrMajor Position2 nAtBat nAssts nOuts
 /selection=forward slentry=0.05 details;
 run;
 quit;
 *Stepwise selection;
-*Result: CrRuns nHits YrMajor div2;
+*Result: div2 YrMajor nAtBat nAssts;
 proc reg data=baseball1;
-model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits
+model logsalary=div2 YrMajor Position2 nAtBat nAssts nOuts
 /selection=stepwise slstay=0.05 slentry=0.05 details;
 run;
 quit;
 *Backwards selection;
-*Results: div2 YrMajor nRuns CrHits nHits;
+*Results: div2 YrMajor nAtBat nAssts;
 Proc reg data=baseball1;        
-model logsalary=team2 div2 YrMajor Position2 nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits/
+model logsalary=div2 YrMajor Position2 nAtBat nAssts nOuts/
 selection=backward slentry=0.05 details;
 run;  
 
-*Running a final model using only independent variables found significant by all three model selection methods;
+*Running a final model using independent variables found significant by all three model selection methods;
 *Residuals suggest the existence of two possible large outliers and six possible minor outliers;
-*Residuals show ten points with high leverage;
+*Residuals show five points with high leverage;
 PROC REG  data=baseball1 plots;        
-    MODEL logsalary= YrMajor div2 nHits/clb
+    MODEL logsalary= div2 YrMajor nAtBat nAssts/clb
     ALPHA=.05;
 RUN;
