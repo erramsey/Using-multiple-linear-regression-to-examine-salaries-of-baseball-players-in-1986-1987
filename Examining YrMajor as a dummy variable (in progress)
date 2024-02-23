@@ -1,0 +1,24 @@
+DATA baseball;
+    SET sashelp.baseball;
+*Creating a new dummy variable for YrMajor. Scatterplots suggested that players in their first four years earn significantly less.;
+    YrMajor1_=YrMajor;
+    IF YrMajor1_<=4 THEN YrMajor1_=0;
+    ELSE IF 4<YrMajor1_ THEN YrMajor1_ =1;
+    ;
+
+*This scatterplot seems to suggest that players in their first four years earn significantly less than players at 5+ years
+regardless of batting statistics. All lines have similar slopes, but the height of the lines for years 1-4 are significantly less;
+PROC SGPLOT DATA=baseball;
+ REG  x=nAtBat y=logsalary/group=YrMajor;
+RUN;  
+PROC SGPLOT DATA=baseball;
+ REG  x=nHits y=logsalary/group=YrMajor;
+RUN;  
+PROC SGPLOT DATA=baseball;
+ REG  x=nHome y=logsalary/group=YrMajor;
+RUN;  
+PROC SGPLOT DATA=baseball;
+ REG  x=nRuns y=logsalary/group=YrMajor;
+RUN;  
+
+*Maybe I can do an analysis with YrMajor as an interaction term;
