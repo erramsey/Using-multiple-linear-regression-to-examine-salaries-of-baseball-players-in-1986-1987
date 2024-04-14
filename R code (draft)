@@ -1,0 +1,76 @@
+#This code needs editing! Do not yet use as-is
+
+library(haven)  # For reading SAS data files
+library(ggplot2)
+library(MASS)
+
+# Load SAS dataset
+baseball <- read_sas("EDIT")
+
+# Converting division to numeric
+baseball$division1 <- ifelse(baseball$division == "East", 0, ifelse(baseball$division == "West", 1, NA))
+
+# Scatterplot of salary for each team
+ggplot(baseball, aes(x = team, y = salary)) +
+  geom_point() +
+  ggtitle("Scatterplot of Baseball Team Salary")
+
+# Scatterplots of salary by division and league
+ggplot(baseball, aes(x = div, y = salary, color = league)) +
+  geom_point() +
+  ggtitle("Scatterplot of Salary by Division/League")
+
+ggplot(baseball, aes(x = div, y = salary, color = division)) +
+  geom_point() +
+  ggtitle("Scatterplot of Salary by Division/League")
+
+# Creating scatterplots of salary per team for each division
+baseball_E <- subset(baseball, division == "East")
+ggplot(baseball_E, aes(x = team, y = salary)) +
+  geom_point() +
+  ggtitle("East Division Team Salaries")
+
+baseball_W <- subset(baseball, division == "West")
+ggplot(baseball_W, aes(x = team, y = salary)) +
+  geom_point() +
+  ggtitle("West Division Team Salaries")
+
+# Scatterplots and boxplots of salary for each position
+ggplot(baseball_E, aes(x = position, y = salary)) +
+  geom_point() +
+  ggtitle("Scatterplot of Salary by Position in the East Division")
+
+ggplot(baseball_W, aes(x = position, y = salary)) +
+  geom_point() +
+  ggtitle("Scatterplot of Salary by Position in the West Division")
+
+# Running initial multiple linear regression
+model <- lm(salary ~ division1 + YrMajor + nAtBat + CrAtBat + nHome + CrHome + nRuns + CrRuns + CrHits + nHits/clb, data = baseball)
+summary(model)
+model <- lm(LogSalary ~ division1 + YrMajor + nAtBat + CrAtBat + nHome + CrHome + nRuns + CrRuns + CrHits + nHits/clb, data = baseball)
+summary(model)
+
+# Running Box-Cox transformation
+boxcox(model)
+
+# Examining multicollinearity
+cor(baseball[, c("LogSalary", "division1", "YrMajor", "nAtBat", "CrAtBat", "nHome", "CrHome", "nRuns", "CrRuns", "CrHits", "nHits")])
+cor(baseball[, c("LogSalary", "division1", "YrMajor", "nAtBat", "CrRBi", "nAssts", "nBB", "nError", "nOuts", "nRBI")])
+
+# Creating model
+# Forward selection
+library(MASS)
+model_forward <- stepAIC(model, direction = "forward", trace = FALSE)
+summary(model_forward)
+
+# Stepwise selection
+model_stepwise <- stepAIC(model, direction = "both", trace = FALSE)
+summary(model_stepwise)
+
+# Backwards selection
+model_backward <- stepAIC(model, direction = "backward", trace = FALSE)
+summary(model_backward)
+
+# Running final model
+final_model <- lm(salary ~ division1 + YrMajor + nAtBat + nOuts/clb, data = baseball)
+summary(final_model)
