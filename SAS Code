@@ -23,15 +23,18 @@ PROC PRINT DATA=baseball1;
 
 *A scatterplot of salary for each team suggests that the range of salaries varies by team;
 PROC SGPLOT DATA = baseball;
+    TITLE "Scatterplot of Baseball Team Salary";
     SCATTER x=team y=salary;
 RUN;
 
 *Scatterplots of salary by div(division and league), the first grouped by league, the second grouped by division;
 *Results suggest that there is a significant difference in salary among division, but not among league;
 PROC SGPLOT DATA = baseball;
+    TITLE "Scatterplot of Salary by Division/League: Color Indicates Baseball League";
     SCATTER x=div y=salary/group=league;
 RUN;
 PROC SGPLOT DATA = baseball;
+    TITLE "Scatterplot of Salary by Division/League: Color Indicates Baseball Division";
     SCATTER x=div y=salary/group=division;
 RUN;
 
@@ -55,15 +58,28 @@ PROC SGPLOT DATA = baseball_W;
     SCATTER x=team y=salary;
 RUN; 
 
-*A scatterplot and boxplot of salary for each position suggests that the range of salaries 
+*Scatterplots and boxplots of salary for each position in the East and West divisions suggests that the range of salaries 
 does not vary by position;
-PROC SGPLOT DATA = baseball;
+PROC SGPLOT DATA = baseball_E;
+    TITLE "Scatterplot of Salary by Position in the East Division";
     SCATTER x=position y=salary;
 RUN;
-PROC SORT DATA=baseball;
+PROC SORT DATA=baseball_E;
     BY position;
 RUN;
-PROC BOXPLOT DATA=baseball;
+PROC BOXPLOT DATA=baseball_E;
+    LABEL position = "Position(s) in 1986 (East Division)";
+    PLOT salary*position;
+RUN;      
+PROC SGPLOT DATA = baseball_W;
+    TITLE "Scatterplot of Salary by Position in the West Division";
+    SCATTER x=position y=salary;
+RUN;
+PROC SORT DATA=baseball_W;
+    BY position;
+RUN;
+PROC BOXPLOT DATA=baseball_W;
+    LABEL position = "Position(s) in 1986 (West Division)";
     PLOT salary*position;
 RUN;      
 
