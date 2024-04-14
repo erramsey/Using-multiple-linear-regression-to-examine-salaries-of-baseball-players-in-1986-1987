@@ -18,7 +18,7 @@ RUN;
 *Using PROC CONTENTS and PROC PRINT to confirm that the variables were properly converted; 
 PROC CONTENTS DATA=baseball1;
 RUN; 
-PROC PRINT DATA=baseball1;
+PROC PRINT DATA=baseball1 (OBS=10);
 
 
 *A scatterplot of salary for each team suggests that the range of salaries varies by team;
@@ -85,9 +85,8 @@ RUN;
 
 *Running an initial multiple linear regression to determine if salary or logsalary should be
 the dependent variable;
-*The graphs for predicted value vs. residual for both show a clear indication of 
+*The graphs of residual vs. predicted value for both show a clear indication of 
 heteroscedasticity, however, the trend is stronger for salary than logsalary;
-*The QQ plot indicates more normality for logsalary;
 PROC REG  data=baseball1 plots;        
     MODEL salary= division2 YrMajor nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits/clb
     ALPHA=.05;
@@ -105,14 +104,14 @@ RUN;
 *Examining multicollinearity between the different variables;
 *nAtBat has a strong, significant positive association with nHit and nRun and a 
 moderate, significant positive association with nHome.
-CrAtBat has a strong, significant positive association with CrHit, CrHome and CrRun.
+CrAtBat has a strong, significant positive association with CrHit, CrHome, and CrRun.
 This is possibly because players with better batting statistics are at bat more often.
 CrAtBat has a strong, positive association with YrMajor.
 nAtBat and YrMajor will be in the model, while CrAtBat, CrHit, CrHome, CrRun, nHit, nRun, and nHome will not.;
-PROC sgscatter data=baseball1;
- matrix logsalary division2 YrMajor nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
-run; 
-PROC CORR data=baseball1;
+PROC SGSCATTER DATA=baseball1;
+ MATRIX logsalary division2 YrMajor nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
+RUN; 
+PROC CORR DATA=baseball1;
  VAR logsalary division2 YrMajor nAtBat CrAtBat nHome CrHome nRuns CrRuns CrHits nHits;
 RUN; 
 *Examining multicollinearity between more variables;
@@ -123,39 +122,50 @@ and a weak, significant association with nAssts, and nOut. The strong and modera
 likely have the same causes as listed above, and the variables will not be in the model.
 The weak associations are both actions done by fielders, and thus the association is likely due to 
 the overall number of games played.;
-PROC sgscatter data=baseball1;
- matrix logsalary division2 YrMajor nAtBat CrBB CrRBi nAssts nBB nError nOuts nRBI;
-run; 
+PROC SGSCATTER DATA=baseball1;
+ MATRIX logsalary division2 YrMajor nAtBat CrBB CrRBi nAssts nBB nError nOuts nRBI;
+RUN; 
 PROC CORR data=baseball1;
  VAR logsalary division2 YrMajor nAtBat CrBB CrRBi nAssts nBB nError nOuts nRBI;
 RUN; 
 
 *Creating model;
+*Examining if either nAssts or nOuts should be added to the model.
+Previous results suggested an interaction between the two, so we examine them on separate models;
+*The p-value of nAssts is not significant, while the p-value of nOuts is.
+The adjusted R-sq value for the model with nOuts is also larger.;
+PROC REG DATA=baseball1;
+    MODEL logsalary=division2 YrMajor nAtBat nAssts;
+RUN;
+PROC REG DATA=baseball1;
+    MODEL logsalary=division2 YrMajor nAtBat nOuts;
+RUN;
+
+*Manual selection suggests that logsalary=division2 YrMajor nAtBat nOuts is the final model.;
+*Automated selection methods were tested and showed the same result.;
 *Forward selection;
-*Result: division2 YrMajor nAtBat nOuts;
-proc reg data=baseball1;
-model logsalary=division2 league2 YrMajor nAtBat nAssts nOuts
-/selection=forward slentry=0.05 details;
-run;
-quit;
+*result: division2 YrMajor nAtBat nOuts;
+PROC REG DATA=baseball1;        
+    MODEL logsalary=division2 YrMajor nAtBat nOuts
+    /selection=forward slentry=0.05 details;
+RUN;
 *Stepwise selection;
 *Result: division2 YrMajor nAtBat nOuts;
-proc reg data=baseball1;
-model logsalary=division2 league2 YrMajor nAtBat nAssts nOuts
-/selection=stepwise slstay=0.05 slentry=0.05 details;
-run;
-quit;
+PROC REG DATA=baseball1;        
+    MODEL logsalary=division2 YrMajor nAtBat nOuts
+    /selection=stepwise slstay=0.05 slentry=0.05 details;
+RUN;
 *Backwards selection;
 *Results: division2 YrMajor nAtBat nOuts;
-Proc reg data=baseball1;        
-model logsalary=division2 league2 YrMajor nAtBat nAssts nOuts/
-selection=backward slentry=0.05 details;
-run;  
+PROC REG DATA=baseball1;        
+    MODEL logsalary=division2 YrMajor nAtBat nOuts/
+    selection=backward slentry=0.05 details;
+RUN;  
 
-*Running a final model using only independent variables found significant by all three model selection methods;
+*Running a final model using only independent variables found significant by all model selection methods;
 *Residuals suggest the existence of three possible large outliers and twelve possible minor outliers;
 *Residuals show sixteen points with high leverage;
-PROC REG  data=baseball1 plots;        
+PROC REG  DATA=baseball1 plots;        
     MODEL logsalary= division2 YrMajor nAtBat nOuts/clb
     ALPHA=.05;
 RUN;
