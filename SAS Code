@@ -43,6 +43,7 @@ DATA baseball_E;
     IF division="East";
 RUN;    
 PROC SGPLOT DATA = baseball_E;
+    TITLE "East Division Team Salaries";
     SCATTER x=team y=salary;
 RUN;
 DATA baseball_W;
@@ -50,6 +51,7 @@ DATA baseball_W;
     IF division="West";
 RUN;    
 PROC SGPLOT DATA = baseball_W;
+    TITLE "West Division Team Salaries";
     SCATTER x=team y=salary;
 RUN; 
 
