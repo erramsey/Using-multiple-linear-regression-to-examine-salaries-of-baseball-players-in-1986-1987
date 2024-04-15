@@ -1,0 +1,67 @@
+DATA baseball;
+    SET sashelp.baseball;
+division1=division;
+    IF division1="East" THEN division1=0;
+    ELSE IF division1="West" THEN division1=1;
+
+*Converting character variables to numeric;
+Data baseball1;
+SET baseball;
+    division2=input(division1,16.);
+RUN; 
+
+*Creating a scatterplot to examine the relationship between salary and YrMajor;
+PROC SGPLOT DATA=baseball1;
+ Scatter  x=YrMajor y=salary;
+RUN; 
+*Creating a means plot to examine the mean salary for each value of YrMajor;
+PROC SORT DATA=baseball1; BY YrMajor;
+PROC MEANS DATA=baseball1;
+ VAR salary; BY YrMajor;
+ OUTPUT OUT=means MEAN=average;
+ GOPTIONS reset=all;
+ SYMBOL v=circle c=blue h=.8 i=join;
+PROC GPLOT DATA=means;
+ PLOT average*YrMajor/frame;
+RUN;  
+*These scatterplot seems to suggest that players in their first four years earn significantly less than players at 5+ years
+regardless of batting statistics. All lines have similar slopes, but the height of the lines for years 1-4 are significantly less;
+PROC SGPLOT DATA=baseball1;
+ REG  x=nAtBat y=salary/group=YrMajor;
+RUN;  
+PROC SGPLOT DATA=baseball1;
+ REG  x=nOuts y=salary/group=YrMajor;
+RUN;  
+
+*Examining the relationship between salary and YrMajor (YrMajor is categorical);
+PROC GLM DATA = baseball plots = all;
+   ClASS YrMajor;
+   MODEL salary = YrMajor;
+   LSMEANS YrMajor;
+RUN;
+
+
+*Re-coding YrMajor as a dummy variable;
+Data baseball2;
+    SET baseball1;
+    YrMajor1_= YrMajor;
+    IF YrMajor1_<=4 THEN YrMajor1_=0;
+    ELSE IF 4<YrMajor1_ THEN YrMajor1_ =1;
+    ;
+*Examining the model with YrMajor as a dummy variable;
+PROC REG  data=baseball2 plots;        
+    MODEL logsalary= division2 YrMajor1_ nAtBat nOuts/clb AIC
+    ALPHA=.05;
+RUN;
+
+*Examining the model with YrMajor as a categorical variable;
+*The Adjusted R-square is better, but the model is complicated;
+PROC GLMSELECT data=baseball1 plots;  
+    CLASS YrMajor division2;      
+    MODEL logsalary= division2 YrMajor nAtBat nOuts;
+RUN;
+
+PROC GLM data=baseball1 plots=DIAGNOSTICS;  
+    CLASS YrMajor division2;      
+    MODEL logsalary= division2 YrMajor nAtBat nOuts;
+RUN;
